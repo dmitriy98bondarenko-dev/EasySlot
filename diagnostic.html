@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diagnostic Page</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .test {
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .success { background-color: #d4edda; border-color: #c3e6cb; }
+    .error { background-color: #f8d7da; border-color: #f5c6cb; }
+    .info { background-color: #d1ecf1; border-color: #bee5eb; }
+  </style>
+</head>
+<body>
+  <h1>SimpleBooking Diagnostic Page</h1>
+  <div id="results"></div>
+  
+  <script type="module">
+    const results = document.getElementById('results');
+    
+    function addResult(title, status, message) {
+      const div = document.createElement('div');
+      div.className = `test ${status}`;
+      div.innerHTML = `<strong>${title}:</strong> ${message}`;
+      results.appendChild(div);
+    }
+    
+    // Test 1: IndexedDB support
+    try {
+      if (window.indexedDB) {
+        addResult('IndexedDB Support', 'success', 'IndexedDB is supported');
+      } else {
+        addResult('IndexedDB Support', 'error', 'IndexedDB is NOT supported');
+      }
+    } catch (e) {
+      addResult('IndexedDB Support', 'error', e.message);
+    }
+    
+    // Test 2: Try to open database
+    try {
+      const request = indexedDB.open('test-db', 1);
+      request.onsuccess = () => {
+        addResult('IndexedDB Access', 'success', 'Can open IndexedDB');
+        request.result.close();
+      };
+      request.onerror = () => {
+        addResult('IndexedDB Access', 'error', 'Cannot open IndexedDB: ' + request.error);
+      };
+    } catch (e) {
+      addResult('IndexedDB Access', 'error', e.message);
+    }
+    
+    // Test 3: Check if main app loads
+    try {
+      import('./src/main.tsx').then(() => {
+        addResult('Main App Import', 'success', 'Main app module loads successfully');
+      }).catch(err => {
+        addResult('Main App Import', 'error', err.message);
+      });
+    } catch (e) {
+      addResult('Main App Import', 'error', e.message);
+    }
+    
+    // Test 4: Browser info
+    addResult('Browser Info', 'info', navigator.userAgent);
+    
+    // Test 5: Check console errors
+    window.addEventListener('error', (e) => {
+      addResult('Runtime Error', 'error', `${e.message} at ${e.filename}:${e.lineno}`);
+    });
+    
+    window.addEventListener('unhandledrejection', (e) => {
+      addResult('Unhandled Promise Rejection', 'error', e.reason);
+    });
+  </script>
+</body>
+</html>
